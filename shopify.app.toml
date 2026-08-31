@@ -1,0 +1,27 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+name = "sizeguide"
+client_id = "bff71b06d606cba86cb876f7302d3da2"
+application_url = "https://shopify.dev/apps/default-app-home"
+embedded = true
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products,read_orders"
+
+[auth]
+redirect_urls = [ "https://shopify.dev/apps/default-app-home/api/auth" ]
+
+[webhooks]
+api_version = "2026-10"
+
+[extensions.theme]
+handle = "sizeguide-extension"
+
+[build]
+automatically_update_urls_on_dev = true
+
+[app_proxy]
+url = "https://shopify.dev/apps/default-app-home/api"
+subpath = "sizeguide"
+prefix = "apps"

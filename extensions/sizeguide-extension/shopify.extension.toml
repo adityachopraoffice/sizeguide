@@ -1,0 +1,7 @@
+api_version = "2024-01"
+uid = "7d4941a1-dd24-c3b2-4498-07fa1ed54095b58adc2d"
+
+[[extensions]]
+type = "theme"
+name = "sizeguide-extension"
+handle = "sizeguide-extension"
