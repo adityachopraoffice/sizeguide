@@ -38,6 +38,7 @@ const shopify = shopifyApp({
     },
   },
   isEmbeddedApp: true,
+  useOnlineTokens: true,
   future: {
     unstable_newEmbeddedAuthStrategy: true,
   },
