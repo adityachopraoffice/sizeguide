@@ -2,7 +2,7 @@
 
 name = "sizeguide"
 client_id = "bff71b06d606cba86cb876f7302d3da2"
-application_url = "https://shopify.dev/apps/default-app-home"
+application_url = "https://sizeguide-cyan.vercel.app"
 embedded = true
 
 [access_scopes]
@@ -10,7 +10,11 @@ embedded = true
 scopes = "read_products,read_orders"
 
 [auth]
-redirect_urls = [ "https://shopify.dev/apps/default-app-home/api/auth" ]
+redirect_urls = [
+  "https://sizeguide-cyan.vercel.app/api/auth",
+  "https://sizeguide-cyan.vercel.app/auth/callback",
+  "https://sizeguide-cyan.vercel.app/auth/shopify/callback"
+]
 
 [webhooks]
 api_version = "2026-10"
@@ -22,6 +26,6 @@ handle = "sizeguide-extension"
 automatically_update_urls_on_dev = true
 
 [app_proxy]
-url = "https://shopify.dev/apps/default-app-home/api"
+url = "https://sizeguide-cyan.vercel.app/api"
 subpath = "sizeguide"
 prefix = "apps"
