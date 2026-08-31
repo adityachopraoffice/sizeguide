@@ -3,8 +3,14 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server.js";
 
 export const loader = async ({ request }) => {
-  await authenticate.admin(request);
-  return null;
+  try {
+    await authenticate.admin(request);
+    return null;
+  } catch (error) {
+    if (error instanceof Response) throw error; // Let Remix handle Shopify redirects
+    console.error("DASHBOARD LOADER FATAL ERROR:", error);
+    throw error;
+  }
 };
 
 export default function Dashboard() {
