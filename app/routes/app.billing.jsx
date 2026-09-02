@@ -92,7 +92,7 @@ export async function action({ request }) {
       onFailure: async () => billing.request({
         plan: billingPlan,
         isTest: true,
-        returnUrl: `https://${host}/app/billing?shop=${session.shop}`,
+        returnUrl: `https://admin.shopify.com/store/${session.shop.replace('.myshopify.com', '')}/apps/${process.env.SHOPIFY_API_KEY}/app/billing`,
       }),
     });
   } catch (error) {
