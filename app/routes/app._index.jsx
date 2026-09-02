@@ -1,11 +1,30 @@
-import { Page, Layout, Card, Text, BlockStack, InlineStack, Button, CalloutCard, InlineGrid, Box, Divider, Icon } from "@shopify/polaris";
+import { Page, Layout, Card, Text, BlockStack, InlineStack, Button, CalloutCard, InlineGrid, Box, Badge } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
+import { useLoaderData } from "@remix-run/react";
 import { authenticate } from "../shopify.server.js";
+import { json } from "@remix-run/node";
 
 export const loader = async ({ request }) => {
   try {
-    await authenticate.admin(request);
-    return null;
+    const { billing } = await authenticate.admin(request);
+    
+    let currentPlan = "Free";
+    try {
+      const billingCheck = await billing.check({
+        plans: ["Basic", "Pro"],
+        isTest: true,
+      });
+      
+      if (billingCheck.hasActivePayment) {
+        if (billingCheck.appSubscriptions.some(sub => sub.name === "Pro")) currentPlan = "Pro";
+        else if (billingCheck.appSubscriptions.some(sub => sub.name === "Basic")) currentPlan = "Basic";
+      }
+    } catch (error) {
+      if (error instanceof Response) throw error; 
+      console.error("Dashboard billing check failed:", error);
+    }
+    
+    return json({ currentPlan });
   } catch (error) {
     if (error instanceof Response) throw error; 
     console.error("DASHBOARD LOADER FATAL ERROR:", error);
@@ -14,6 +33,8 @@ export const loader = async ({ request }) => {
 };
 
 export default function Dashboard() {
+  const { currentPlan } = useLoaderData();
+  
   return (
     <Page fullWidth>
       <TitleBar title="Dashboard" />
@@ -47,6 +68,21 @@ export default function Dashboard() {
         </Box>
 
         <Layout>
+          <Layout.Section variant="oneThird">
+            <Card roundedAbove="sm">
+              <BlockStack gap="200">
+                <Text as="h3" variant="headingSm" tone="subdued">Active Plan</Text>
+                <InlineStack align="start" blockAlign="center" gap="200">
+                  <Text as="p" variant="heading2xl">{currentPlan}</Text>
+                  {currentPlan !== "Free" && <Badge tone="success">Active</Badge>}
+                </InlineStack>
+                <div style={{ marginTop: "8px" }}>
+                  <Button variant="plain" url="/app/billing">Upgrade or change plan</Button>
+                </div>
+              </BlockStack>
+            </Card>
+          </Layout.Section>
+          
           <Layout.Section>
             <CalloutCard
               title="Next Step: Enable the App Embed"
