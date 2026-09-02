@@ -9,8 +9,11 @@ import {
   Button,
   Grid,
   Badge,
-  List,
-  Banner
+  Banner,
+  Box,
+  InlineStack,
+  Divider,
+  Icon
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server.js";
 import prisma from "../db.server.js";
@@ -34,14 +37,12 @@ export async function loader({ request }) {
     if (error instanceof Response) throw error;
     console.error("Billing check failed (Shopify Glitch):", error);
     
-    // Fallback to database
     const shopSettings = await prisma.shopSettings.findUnique({ where: { shop } });
     if (shopSettings) {
       currentPlan = shopSettings.currentPlan;
     }
   }
   
-  // Ensure DB matches current plan
   await prisma.shopSettings.upsert({
     where: { shop },
     update: { currentPlan },
@@ -53,7 +54,6 @@ export async function loader({ request }) {
 
 export async function action({ request }) {
   const { session, billing } = await authenticate.admin(request);
-  const shop = session.shop;
   const formData = await request.formData();
   const planName = formData.get("plan");
 
@@ -77,13 +77,9 @@ export async function action({ request }) {
       }
     } catch (error) {
       if (error instanceof Response) throw error;
-      console.error("Billing cancel failed:", error);
     }
     return redirect("/app/billing");
   }
-
-  const url = new URL(request.url);
-  const host = url.host;
 
   try {
     await billing.require({
@@ -97,7 +93,6 @@ export async function action({ request }) {
     });
   } catch (error) {
     if (error instanceof Response || (error && typeof error.status === 'number')) throw error;
-    console.error("CRITICAL BILLING ERROR:", error);
     return json({ error: `Billing Error: ${error.message || JSON.stringify(error)}` }, { status: 400 });
   }
 
@@ -117,8 +112,19 @@ export default function Billing() {
     submit({ plan: planName }, { method: "post" });
   };
 
+  const CheckIcon = () => (
+    <span style={{ color: "#29845a", marginRight: "8px", fontWeight: "bold" }}>✓</span>
+  );
+  
+  const CrossIcon = () => (
+    <span style={{ color: "#8c9196", marginRight: "8px", fontWeight: "bold" }}>✕</span>
+  );
+
   return (
-    <Page title="Manage Subscription">
+    <Page 
+      title="Manage Subscription" 
+      subtitle="Unlock advanced templates and full color customization with a premium plan."
+    >
       <Layout>
         <Layout.Section>
           {actionData?.error && (
@@ -128,29 +134,40 @@ export default function Billing() {
               </Banner>
             </div>
           )}
+          
           <Grid>
+            {/* FREE PLAN */}
             <Grid.Cell columnSpan={{xs: 6, sm: 6, md: 4, lg: 4, xl: 4}}>
-              <Card>
-                <BlockStack gap="400">
+              <Card background={currentPlan === "free" ? "bg-surface-active" : "bg-surface"}>
+                <BlockStack gap="500">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Text variant="headingLg" as="h2">Free</Text>
-                    {currentPlan === "free" && <Badge tone="success">Current Plan</Badge>}
+                    {currentPlan === "free" && <Badge tone="success">Active</Badge>}
                   </div>
-                  <Text variant="headingXl" as="p">$0<span style={{fontSize: "14px", fontWeight: "normal"}}>/mo</span></Text>
                   
-                  <List>
-                    <List.Item>Minimal template only</List.Item>
-                    <List.Item>Default button text only</List.Item>
-                    <List.Item>No CM/Inches toggle</List.Item>
-                    <List.Item>No custom colors</List.Item>
-                  </List>
+                  <Box paddingBlockEnd="400">
+                    <Text variant="heading3xl" as="p">$0</Text>
+                    <Text tone="subdued" as="span">Free forever</Text>
+                  </Box>
                   
-                  <div style={{ marginTop: 'auto', paddingTop: '16px' }}>
+                  <Divider />
+                  
+                  <BlockStack gap="300">
+                    <div style={{ marginTop: "16px" }} />
+                    <Text as="p"><CheckIcon /> Unlimited product views</Text>
+                    <Text as="p"><CheckIcon /> Minimal template</Text>
+                    <Text as="p" tone="subdued"><CrossIcon /> Custom button text</Text>
+                    <Text as="p" tone="subdued"><CrossIcon /> Premium templates</Text>
+                    <Text as="p" tone="subdued"><CrossIcon /> Full color customization</Text>
+                  </BlockStack>
+                  
+                  <div style={{ marginTop: 'auto', paddingTop: '32px' }}>
                     {currentPlan === "free" ? (
-                      <Button disabled fullWidth>Current Plan</Button>
+                      <Button disabled fullWidth size="large">Current Plan</Button>
                     ) : (
                       <Button 
                         fullWidth 
+                        size="large"
                         onClick={() => handleUpgrade("Free")}
                         loading={isSubmitting && planData === "Free"}
                       >
@@ -162,29 +179,40 @@ export default function Billing() {
               </Card>
             </Grid.Cell>
             
+            {/* BASIC PLAN */}
             <Grid.Cell columnSpan={{xs: 6, sm: 6, md: 4, lg: 4, xl: 4}}>
-              <Card>
-                <BlockStack gap="400">
+              <Card background={currentPlan === "basic" ? "bg-surface-active" : "bg-surface"}>
+                <BlockStack gap="500">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Text variant="headingLg" as="h2">Basic</Text>
-                    {currentPlan === "basic" && <Badge tone="success">Current Plan</Badge>}
+                    {currentPlan === "basic" && <Badge tone="success">Active</Badge>}
                   </div>
-                  <Text variant="headingXl" as="p">$4.99<span style={{fontSize: "14px", fontWeight: "normal"}}>/mo</span></Text>
                   
-                  <List>
-                    <List.Item>All 4 templates</List.Item>
-                    <List.Item>Custom button text</List.Item>
-                    <List.Item>CM/Inches toggle</List.Item>
-                    <List.Item>No custom colors</List.Item>
-                  </List>
+                  <Box paddingBlockEnd="400">
+                    <InlineStack align="start" blockAlign="baseline" gap="100">
+                      <Text variant="heading3xl" as="p">$4.99</Text>
+                      <Text tone="subdued" as="span">/ month</Text>
+                    </InlineStack>
+                  </Box>
                   
-                  <div style={{ marginTop: 'auto', paddingTop: '16px' }}>
+                  <Divider />
+                  
+                  <BlockStack gap="300">
+                    <div style={{ marginTop: "16px" }} />
+                    <Text as="p"><CheckIcon /> Unlimited product views</Text>
+                    <Text as="p"><CheckIcon /> Custom button text</Text>
+                    <Text as="p"><CheckIcon /> All 4 Premium Templates</Text>
+                    <Text as="p" tone="subdued"><CrossIcon /> Custom template colors</Text>
+                    <Text as="p" tone="subdued"><CrossIcon /> Custom button colors</Text>
+                  </BlockStack>
+                  
+                  <div style={{ marginTop: 'auto', paddingTop: '32px' }}>
                     {currentPlan === "basic" ? (
-                      <Button disabled fullWidth>Current Plan</Button>
+                      <Button disabled fullWidth size="large">Current Plan</Button>
                     ) : (
                       <Button 
-                        primary 
                         fullWidth 
+                        size="large"
                         onClick={() => handleUpgrade("Basic")}
                         loading={isSubmitting && planData === "Basic"}
                       >
@@ -196,38 +224,76 @@ export default function Billing() {
               </Card>
             </Grid.Cell>
             
+            {/* PRO PLAN */}
             <Grid.Cell columnSpan={{xs: 6, sm: 6, md: 4, lg: 4, xl: 4}}>
-              <Card>
-                <BlockStack gap="400">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text variant="headingLg" as="h2">Pro</Text>
-                    {currentPlan === "pro" && <Badge tone="success">Current Plan</Badge>}
+              {/* Wrapping Card in a specialized border wrapper to make it pop */}
+              <div style={{ 
+                border: "2px solid #005bd3", 
+                borderRadius: "10px", 
+                boxShadow: "0 10px 20px rgba(0, 91, 211, 0.15)",
+                position: "relative",
+                height: "100%"
+              }}>
+                {currentPlan !== "pro" && (
+                  <div style={{ 
+                    position: "absolute", 
+                    top: "-12px", 
+                    left: "50%", 
+                    transform: "translateX(-50%)", 
+                    background: "#005bd3", 
+                    color: "white", 
+                    padding: "2px 12px", 
+                    borderRadius: "12px",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                    zIndex: 1
+                  }}>
+                    MOST POPULAR
                   </div>
-                  <Text variant="headingXl" as="p">$9.99<span style={{fontSize: "14px", fontWeight: "normal"}}>/mo</span></Text>
-                  
-                  <List>
-                    <List.Item>All 4 templates</List.Item>
-                    <List.Item>Custom button text</List.Item>
-                    <List.Item>CM/Inches toggle</List.Item>
-                    <List.Item>Full color customization</List.Item>
-                  </List>
-                  
-                  <div style={{ marginTop: 'auto', paddingTop: '16px' }}>
-                    {currentPlan === "pro" ? (
-                      <Button disabled fullWidth>Current Plan</Button>
-                    ) : (
-                      <Button 
-                        primary 
-                        fullWidth 
-                        onClick={() => handleUpgrade("Pro")}
-                        loading={isSubmitting && planData === "Pro"}
-                      >
-                        Upgrade to Pro
-                      </Button>
-                    )}
-                  </div>
-                </BlockStack>
-              </Card>
+                )}
+                <Card background={currentPlan === "pro" ? "bg-surface-active" : "bg-surface"}>
+                  <BlockStack gap="500">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text variant="headingLg" as="h2">Pro</Text>
+                      {currentPlan === "pro" && <Badge tone="success">Active</Badge>}
+                    </div>
+                    
+                    <Box paddingBlockEnd="400">
+                      <InlineStack align="start" blockAlign="baseline" gap="100">
+                        <Text variant="heading3xl" as="p">$9.99</Text>
+                        <Text tone="subdued" as="span">/ month</Text>
+                      </InlineStack>
+                    </Box>
+                    
+                    <Divider />
+                    
+                    <BlockStack gap="300">
+                      <div style={{ marginTop: "16px" }} />
+                      <Text as="p"><CheckIcon /> Unlimited product views</Text>
+                      <Text as="p"><CheckIcon /> Custom button text</Text>
+                      <Text as="p"><CheckIcon /> All 4 Premium Templates</Text>
+                      <Text as="p"><CheckIcon /> Custom template colors</Text>
+                      <Text as="p"><CheckIcon /> Custom button colors</Text>
+                    </BlockStack>
+                    
+                    <div style={{ marginTop: 'auto', paddingTop: '32px' }}>
+                      {currentPlan === "pro" ? (
+                        <Button disabled fullWidth size="large">Current Plan</Button>
+                      ) : (
+                        <Button 
+                          primary 
+                          fullWidth 
+                          size="large"
+                          onClick={() => handleUpgrade("Pro")}
+                          loading={isSubmitting && planData === "Pro"}
+                        >
+                          Upgrade to Pro
+                        </Button>
+                      )}
+                    </div>
+                  </BlockStack>
+                </Card>
+              </div>
             </Grid.Cell>
           </Grid>
         </Layout.Section>
