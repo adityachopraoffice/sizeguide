@@ -92,7 +92,7 @@ export async function action({ request }) {
       onFailure: async () => billing.request({
         plan: billingPlan,
         isTest: true,
-        returnUrl: `https://${host}/app/billing`,
+        returnUrl: `https://${host}/app/billing?shop=${session.shop}`,
       }),
     });
   } catch (error) {
